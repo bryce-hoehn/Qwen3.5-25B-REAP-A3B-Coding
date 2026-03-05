@@ -71,13 +71,14 @@ jobs:
           path: ./model
           key: model-Flagstone8878/Qwen3.5-25B-REAP-A3B-Coding
 
-      - name: Download model from Hugging Face (if not cached)
-        if: steps.cache-model.outputs.cache-hit != 'true'
+      - name: Download model from Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_HOME: ${{ runner.temp }}/huggingface  # Isolated cache per run
+          HF_HUB_ENABLE_HF_TRANSFER: 1             # Enable faster downloads
         run: |
           hf download Flagstone8878/Qwen3.5-25B-REAP-A3B-Coding \
-            --token "$HF_TOKEN" \
+            --token $HF_TOKEN \
             --local-dir ./model
 
       # ------------------------------------------------------------
