@@ -36,27 +36,12 @@ jobs:
         if: steps.cache-llama-repo.outputs.cache-hit != 'true'
         run: git clone https://github.com/ggml-org/llama.cpp
 
-      # ------------------------------------------------------------
-      # Cache llama.cpp build
-      - name: Cache llama.cpp build
-        id: cache-llama-build
-        uses: actions/cache@v4
-        with:
-          path: llama.cpp/build
-          key: llama-cpp-build-${{ runner.os }}-${{ hashFiles('llama.cpp/CMakeLists.txt') }}
-
-      - name: Build llama.cpp (if not cached)
-        if: steps.cache-llama-build.outputs.cache-hit != 'true'
-        run: |
-          cd llama.cpp
-          cmake -B build
-          cmake --build build --config Release -j $(nproc)
-
       - name: Create output directory
         run: mkdir -p "$GITHUB_WORKSPACE/gguf"
 
       - name: Install Python dependencies for conversion
         run: |
+          cd "$GITHUB_WORKSPACE/llama.cpp"
           uv venv
           source .venv/bin/activate
           uv pip install --index-strategy unsafe-best-match -r "$GITHUB_WORKSPACE/llama.cpp/requirements.txt"
@@ -91,6 +76,23 @@ jobs:
             
       - name: Cleanup model
         run: rm -rf "$GITHUB_WORKSPACE/model"
+
+      # ------------------------------------------------------------
+      # Cache llama.cpp build
+      - name: Cache llama.cpp build
+        id: cache-llama-build
+        uses: actions/cache@v4
+        with:
+          path: llama.cpp/build
+          key: llama-cpp-build-${{ runner.os }}-${{ hashFiles('llama.cpp/CMakeLists.txt') }}
+
+      - name: Build llama.cpp (if not cached)
+        if: steps.cache-llama-build.outputs.cache-hit != 'true'
+        run: |
+          cd llama.cpp
+          cmake -B build
+          cmake --build build --config Release -j $(nproc)
+          
       # ------------------------------------------------------------
       - name: Build quants
         env:
